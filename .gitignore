@@ -1,0 +1,40 @@
+ 
+
+
+echo # Binaries > .gitignore
+echo *.exe >> .gitignore
+echo *.exe~ >> .gitignore
+echo *.dll >> .gitignore
+echo *.so >> .gitignore
+echo *.dylib >> .gitignore
+echo bin/ >> .gitignore
+echo. >> .gitignore
+echo # Test binary >> .gitignore
+echo *.test >> .gitignore
+echo. >> .gitignore
+echo # Output of the go coverage tool >> .gitignore
+echo *.out >> .gitignore
+echo. >> .gitignore
+echo # Go workspace file >> .gitignore
+echo go.work >> .gitignore
+echo. >> .gitignore
+echo # Environment variables >> .gitignore
+echo .env >> .gitignore
+echo .env.local >> .gitignore
+echo .env.*.local >> .gitignore
+echo. >> .gitignore
+echo # IDE >> .gitignore
+echo .vscode/ >> .gitignore
+echo .idea/ >> .gitignore
+echo *.swp >> .gitignore
+echo *.swo >> .gitignore
+echo. >> .gitignore
+echo # OS >> .gitignore
+echo .DS_Store >> .gitignore
+echo Thumbs.db >> .gitignore
+echo. >> .gitignore
+echo # Application specific >> .gitignore
+echo tmp/ >> .gitignore
+echo logs/ >> .gitignore
+echo uploads/* >> .gitignore
+echo !uploads/.gitkeep >> .gitignore
