@@ -45,20 +45,24 @@ func main() {
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
 	var businessProfileHandler *handlers.BusinessProfileHandler
+	var pinHandler *handlers.PINHandler
 	if redisClient != nil {
 		// Initialize repositories
 		otpRepo := repository.NewOTPRepository(redisClient, cfg.OTP.TTL)
 		businessRepo := repository.NewBusinessProfileRepository(redisClient, 0)
+		pinRepo := repository.NewPinRepository(redisClient, 0)
 
 		// Initialize services
 		smsService := services.NewSMSService(cfg.Twilio)
 		emailService := services.NewEmailService(cfg.SMTP)
 		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
 		businessService := services.NewBusinessProfileService(businessRepo)
+		pinService := services.NewPINService(pinRepo)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
 		businessProfileHandler = handlers.NewBusinessProfileHandler(businessService)
+		pinHandler = handlers.NewPINHandler(pinService)
 	}
 
 	// API routes
@@ -72,6 +76,11 @@ func main() {
 			// OTP endpoints (only if Redis is available)
 			if otpHandler != nil {
 				otpHandler.RegisterRoutes(auth)
+			}
+
+			// PIN endpoints (only if Redis is available)
+			if pinHandler != nil {
+				pinHandler.RegisterRoutes(auth)
 			}
 
 			// Existing auth endpoints
@@ -127,6 +136,9 @@ func main() {
 		fmt.Println(" Profile Endpoints:")
 		fmt.Println("   POST /api/v1/profile/business-details")
 		fmt.Println("   POST /api/profile/business-details")
+		fmt.Println(" PIN Endpoints:")
+		fmt.Println("   POST /api/v1/auth/setup-pin")
+		fmt.Println("   POST /api/v1/auth/login-pin")
 	} else {
 		fmt.Println(" OTP endpoints disabled (Redis not available)")
 		fmt.Println(" Profile endpoints disabled (Redis not available)")
