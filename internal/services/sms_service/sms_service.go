@@ -1,9 +1,8 @@
-package services
+package sms_service
 
 import (
 	"context"
 	"fmt"
-
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/twilio/twilio-go"
 	api "github.com/twilio/twilio-go/rest/api/v2010"
@@ -19,7 +18,6 @@ func NewSMSService(cfg config.TwilioConfig) *SMSService {
 		Username: cfg.AccountSID,
 		Password: cfg.AuthToken,
 	})
-
 	return &SMSService{
 		client:    client,
 		fromPhone: cfg.FromPhone,
@@ -30,14 +28,11 @@ func (s *SMSService) SendOTP(ctx context.Context, phoneNumber, code string) erro
 	if s.client == nil || s.fromPhone == "" {
 		return fmt.Errorf("SMS service not properly configured")
 	}
-
 	message := fmt.Sprintf("Your VestRoll verification code is: %s. This code expires in 5 minutes.", code)
-
 	params := &api.CreateMessageParams{}
 	params.SetTo(phoneNumber)
 	params.SetFrom(s.fromPhone)
 	params.SetBody(message)
-
 	_, err := s.client.Api.CreateMessage(params)
 	return err
 }

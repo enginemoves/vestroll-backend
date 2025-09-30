@@ -1,9 +1,8 @@
-package services
+package email_service
 
 import (
 	"context"
 	"fmt"
-
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"gopkg.in/gomail.v2"
 )
@@ -18,9 +17,7 @@ func NewEmailService(cfg config.SMTPConfig) *EmailService {
 	if cfg.Username == "" || cfg.Password == "" {
 		return &EmailService{} // Return unconfigured service
 	}
-
 	dialer := gomail.NewDialer(cfg.Host, cfg.Port, cfg.Username, cfg.Password)
-	
 	return &EmailService{
 		dialer:    dialer,
 		fromEmail: cfg.FromEmail,
@@ -32,12 +29,10 @@ func (e *EmailService) SendOTP(ctx context.Context, email, code string) error {
 	if e.dialer == nil {
 		return fmt.Errorf("email service not properly configured")
 	}
-
 	m := gomail.NewMessage()
 	m.SetHeader("From", fmt.Sprintf("%s <%s>", e.fromName, e.fromEmail))
 	m.SetHeader("To", email)
 	m.SetHeader("Subject", "VestRoll - Verification Code")
-
 	body := fmt.Sprintf(`
 	<html>
 	<body>
@@ -62,13 +57,9 @@ func (e *EmailService) SendOTP(ctx context.Context, email, code string) error {
 	</body>
 	</html>
 	`, code)
-
 	m.SetBody("text/html", body)
-
-	// Also set plain text version
 	plainText := fmt.Sprintf("Your VestRoll verification code is: %s\n\nThis code expires in 5 minutes.\n\nIf you didn't request this code, please ignore this email.", code)
 	m.AddAlternative("text/plain", plainText)
-
 	return e.dialer.DialAndSend(m)
 }
 

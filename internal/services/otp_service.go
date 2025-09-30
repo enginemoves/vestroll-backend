@@ -11,19 +11,21 @@ import (
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/models"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
+	"github.com/codeZe-us/vestroll-backend/internal/services/email_service"
+	"github.com/codeZe-us/vestroll-backend/internal/services/sms_service"
 )
 
 type OTPService struct {
 	otpRepo      *repository.OTPRepository
-	smsService   *SMSService
-	emailService *EmailService
+	smsService   *sms_service.SMSService
+	emailService *email_service.EmailService
 	config       config.OTPConfig
 }
 
 func NewOTPService(
 	otpRepo *repository.OTPRepository,
-	smsService *SMSService,
-	emailService *EmailService,
+	smsService *sms_service.SMSService,
+	emailService *email_service.EmailService,
 	config config.OTPConfig,
 ) *OTPService {
 	return &OTPService{
