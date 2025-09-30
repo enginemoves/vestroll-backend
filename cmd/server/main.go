@@ -8,8 +8,11 @@ import (
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
+	handlers_auth "github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
+	"github.com/codeZe-us/vestroll-backend/internal/services/sms_service"
+	"github.com/codeZe-us/vestroll-backend/internal/services/email_service"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
 	"github.com/gin-gonic/gin"
 )
@@ -49,50 +52,62 @@ func main() {
 		otpRepo := repository.NewOTPRepository(redisClient, cfg.OTP.TTL)
 
 		// Initialize services
-		smsService := services.NewSMSService(cfg.Twilio)
-		emailService := services.NewEmailService(cfg.SMTP)
-		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
+	smsService := sms_service.NewSMSService(cfg.Twilio)
+	emailService := email_service.NewEmailService(cfg.SMTP)
+	otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
 	}
 
-	// API routes
-	v1 := r.Group("/api/v1")
-	{
-		auth := v1.Group("/auth")
+		// API routes
+		v1 := r.Group("/api/v1")
 		{
-			// Apply rate limiting to OTP endpoints
-			auth.Use(middleware.OTPRateLimitMiddleware())
-			
-			// OTP endpoints (only if Redis is available)
-			if otpHandler != nil {
-				otpHandler.RegisterRoutes(auth)
+			auth := v1.Group("/auth")
+			{
+				// Apply rate limiting to OTP endpoints
+				auth.Use(middleware.OTPRateLimitMiddleware())
+                
+				// OTP endpoints (only if Redis is available)
+				if otpHandler != nil {
+					otpHandler.RegisterRoutes(auth)
+				}
+
+				// Password reset endpoints (only if Redis is available)
+				if redisClient != nil {
+					emailService := email_service.NewEmailService(cfg.SMTP)
+					smsService := sms_service.NewSMSService(cfg.Twilio)
+					passwordResetHandler := &handlers_auth.PasswordResetHandler{
+						EmailService: emailService,
+						SMSService: smsService,
+						RedisClient: redisClient,
+					}
+					handlers_auth.RegisterPasswordResetRoutes(auth, passwordResetHandler)
+				}
+
+				// Existing auth endpoints
+				auth.POST("/login", func(c *gin.Context) {
+					c.JSON(http.StatusOK, gin.H{"message": "Login endpoint - Coming soon"})
+				})
+				auth.POST("/register", func(c *gin.Context) {
+					c.JSON(http.StatusOK, gin.H{"message": "Register endpoint - Coming soon"})
+				})
 			}
 
-			// Existing auth endpoints
-			auth.POST("/login", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Login endpoint - Coming soon"})
-			})
-			auth.POST("/register", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Register endpoint - Coming soon"})
-			})
-		}
+			employees := v1.Group("/employees")
+			{
+				employees.GET("/", func(c *gin.Context) {
+					c.JSON(http.StatusOK, gin.H{"message": "Get employees - Coming soon"})
+				})
+			}
 
-		employees := v1.Group("/employees")
-		{
-			employees.GET("/", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Get employees - Coming soon"})
-			})
+			payroll := v1.Group("/payroll")
+			{
+				payroll.GET("/", func(c *gin.Context) {
+					c.JSON(http.StatusOK, gin.H{"message": "Payroll management - Coming soon"})
+				})
+			}
 		}
-
-		payroll := v1.Group("/payroll")
-		{
-			payroll.GET("/", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Payroll management - Coming soon"})
-			})
-		}
-	}
 
 	fmt.Println(" VestRoll Backend starting on :8080")
 	fmt.Println(" Health check: http://localhost:8080/health")
