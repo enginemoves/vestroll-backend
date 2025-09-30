@@ -44,17 +44,21 @@ func main() {
 
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
+	var businessProfileHandler *handlers.BusinessProfileHandler
 	if redisClient != nil {
 		// Initialize repositories
 		otpRepo := repository.NewOTPRepository(redisClient, cfg.OTP.TTL)
+		businessRepo := repository.NewBusinessProfileRepository(redisClient, 0)
 
 		// Initialize services
 		smsService := services.NewSMSService(cfg.Twilio)
 		emailService := services.NewEmailService(cfg.SMTP)
 		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
+		businessService := services.NewBusinessProfileService(businessRepo)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
+		businessProfileHandler = handlers.NewBusinessProfileHandler(businessService)
 	}
 
 	// API routes
@@ -92,6 +96,24 @@ func main() {
 				c.JSON(http.StatusOK, gin.H{"message": "Payroll management - Coming soon"})
 			})
 		}
+
+		profile := v1.Group("/profile")
+		{
+			if businessProfileHandler != nil {
+				businessProfileHandler.RegisterRoutes(profile)
+			}
+		}
+	}
+
+	// Also expose non-versioned /api/profile routes for compatibility
+	api := r.Group("/api")
+	{
+		profile := api.Group("/profile")
+		{
+			if businessProfileHandler != nil {
+				businessProfileHandler.RegisterRoutes(profile)
+			}
+		}
 	}
 
 	fmt.Println(" VestRoll Backend starting on :8080")
@@ -102,8 +124,12 @@ func main() {
 		fmt.Println(" OTP Endpoints:")
 		fmt.Println("   POST /api/v1/auth/send-otp")
 		fmt.Println("   POST /api/v1/auth/verify-otp")
+		fmt.Println(" Profile Endpoints:")
+		fmt.Println("   POST /api/v1/profile/business-details")
+		fmt.Println("   POST /api/profile/business-details")
 	} else {
 		fmt.Println(" OTP endpoints disabled (Redis not available)")
+		fmt.Println(" Profile endpoints disabled (Redis not available)")
 	}
 
 	log.Fatal(r.Run(":8080"))
