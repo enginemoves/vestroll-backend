@@ -11,6 +11,6 @@ func RegisterPasswordResetRoutes(r *gin.RouterGroup, handler *PasswordResetHandl
 }
 
 func RegisterGoogleAuthRoutes(r *gin.RouterGroup, handler *GoogleOAuth) {
-	r.POST("/google-login", handler.LoginURL)
-	r.POST("/google-callback", handler.HandleCallbackGin)
+	r.POST("/google-login", handler.LoginURLFromPost)
+	r.POST("/google-callback", handler.HandleCallbackGinPost)
 }
