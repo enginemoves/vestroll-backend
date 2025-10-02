@@ -14,6 +14,12 @@ type Config struct {
 	OTP      OTPConfig
 	Twilio   TwilioConfig
 	SMTP     SMTPConfig
+	Google   GoogleConfig
+}
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
 }
 
 type ServerConfig struct {
@@ -42,8 +48,8 @@ type JWTConfig struct {
 }
 
 type OTPConfig struct {
-	Length int
-	TTL    time.Duration
+	Length    int
+	TTL       time.Duration
 	RateLimit RateLimitConfig
 }
 
@@ -59,12 +65,12 @@ type TwilioConfig struct {
 }
 
 type SMTPConfig struct {
-	Host     string
-	Port     int
-	Username string
-	Password string
+	Host      string
+	Port      int
+	Username  string
+	Password  string
 	FromEmail string
-	FromName string
+	FromName  string
 }
 
 func Load() *Config {
@@ -110,6 +116,11 @@ func Load() *Config {
 			Password:  getEnv("SMTP_PASSWORD", ""),
 			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@vestroll.com"),
 			FromName:  getEnv("SMTP_FROM_NAME", "VestRoll"),
+		},
+		Google: GoogleConfig{
+			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
 		},
 	}
 }

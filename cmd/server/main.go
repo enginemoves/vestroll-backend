@@ -8,9 +8,12 @@ import (
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
+	handlers_auth "github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
+	"github.com/codeZe-us/vestroll-backend/internal/services/email_service"
+	"github.com/codeZe-us/vestroll-backend/internal/services/sms_service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,7 +24,7 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 
 	r := gin.Default()
-	
+
 	// Add middleware
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -53,8 +56,8 @@ func main() {
 		pinRepo := repository.NewPinRepository(redisClient, 0)
 
 		// Initialize services
-		smsService := services.NewSMSService(cfg.Twilio)
-		emailService := services.NewEmailService(cfg.SMTP)
+		smsService := sms_service.NewSMSService(cfg.Twilio)
+		emailService := email_service.NewEmailService(cfg.SMTP)
 		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
 		businessService := services.NewBusinessProfileService(businessRepo)
 		pinService := services.NewPINService(pinRepo)
@@ -72,7 +75,7 @@ func main() {
 		{
 			// Apply rate limiting to OTP endpoints
 			auth.Use(middleware.OTPRateLimitMiddleware())
-			
+
 			// OTP endpoints (only if Redis is available)
 			if otpHandler != nil {
 				otpHandler.RegisterRoutes(auth)
@@ -82,6 +85,14 @@ func main() {
 			if pinHandler != nil {
 				pinHandler.RegisterRoutes(auth)
 			}
+
+			// Google OAuth endpoints
+			googleOAuth := handlers_auth.NewGoogleOAuth(
+				cfg.Google.ClientID,
+				cfg.Google.ClientSecret,
+				cfg.Google.RedirectURL,
+			)
+			handlers_auth.RegisterGoogleAuthRoutes(auth, googleOAuth)
 
 			// Existing auth endpoints
 			auth.POST("/login", func(c *gin.Context) {
@@ -128,7 +139,7 @@ func main() {
 	fmt.Println(" VestRoll Backend starting on :8080")
 	fmt.Println(" Health check: http://localhost:8080/health")
 	fmt.Println(" API Base: http://localhost:8080/api/v1")
-	
+
 	if redisClient != nil {
 		fmt.Println(" OTP Endpoints:")
 		fmt.Println("   POST /api/v1/auth/send-otp")
