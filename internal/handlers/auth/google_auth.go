@@ -30,7 +30,7 @@ func NewGoogleOAuth(clientID, clientSecret, redirectURL string) *GoogleOAuth {
 	}
 }
 
-// Generates a random state string for OAuth2
+// Generates a random state string for OAuth
 func generateState() string {
 	b := make([]byte, 16)
 	_, err := rand.Read(b)
@@ -40,8 +40,8 @@ func generateState() string {
 	return base64.URLEncoding.EncodeToString(b)
 }
 
-// Accepts POST body for state
-func (g *GoogleOAuth) LoginURLFromPost(c *gin.Context) {
+
+func (g *GoogleOAuth) LoginURL(c *gin.Context) {
 	// Optionally accept a custom state from POST body
 	state := c.PostForm("state")
 	if state == "" {
@@ -52,7 +52,7 @@ func (g *GoogleOAuth) LoginURLFromPost(c *gin.Context) {
 }
 
 // HandleCallbackGin handles the OAuth2 callback and returns JSON via Gin
-func (g *GoogleOAuth) HandleCallbackGinPost(c *gin.Context) {
+func (g *GoogleOAuth) HandleCallbackGin(c *gin.Context) {
 	state := c.PostForm("state")
 	if state == "" {
 		state = c.Query("state")
