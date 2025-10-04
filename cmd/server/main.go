@@ -5,13 +5,17 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/alicebob/miniredis/v2"
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
+	"github.com/codeZe-us/vestroll-backend/internal/services/email_service"
+	"github.com/codeZe-us/vestroll-backend/internal/services/sms_service"
 	"github.com/gin-gonic/gin"
+	redis "github.com/go-redis/redis/v8"
 )
 
 func main() {
@@ -39,29 +43,40 @@ func main() {
 	// Initialize Redis client
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {
-		log.Printf("Warning: Redis connection failed: %v. OTP functionality will not be available.", err)
+		log.Printf("Warning: Redis connection failed: %v", err)
+		// Start embedded in-memory Redis for local dev/testing
+		if mini, merr := miniredis.Run(); merr == nil {
+			log.Printf("Embedded Redis (miniredis) started at %s", mini.Addr())
+			redisClient = redis.NewClient(&redis.Options{Addr: mini.Addr()})
+		} else {
+			log.Printf("Failed to start embedded Redis: %v", merr)
+		}
 	}
 
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
-	var businessProfileHandler *handlers.BusinessProfileHandler
+var businessProfileHandler *handlers.BusinessProfileHandler
+	var profileHandler *handlers.ProfileHandler
 	var pinHandler *handlers.PINHandler
 	if redisClient != nil {
 		// Initialize repositories
 		otpRepo := repository.NewOTPRepository(redisClient, cfg.OTP.TTL)
 		businessRepo := repository.NewBusinessProfileRepository(redisClient, 0)
+		profileRepo := repository.NewProfileRepository(redisClient, 0)
 		pinRepo := repository.NewPinRepository(redisClient, 0)
 
 		// Initialize services
-		smsService := services.NewSMSService(cfg.Twilio)
-		emailService := services.NewEmailService(cfg.SMTP)
+		smsService := sms_service.NewSMSService(cfg.Twilio)
+		emailService := email_service.NewEmailService(cfg.SMTP)
 		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
 		businessService := services.NewBusinessProfileService(businessRepo)
+		profileService := services.NewProfileService(profileRepo)
 		pinService := services.NewPINService(pinRepo)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
 		businessProfileHandler = handlers.NewBusinessProfileHandler(businessService)
+		profileHandler = handlers.NewProfileHandler(profileService)
 		pinHandler = handlers.NewPINHandler(pinService)
 	}
 
@@ -111,6 +126,9 @@ func main() {
 			if businessProfileHandler != nil {
 				businessProfileHandler.RegisterRoutes(profile)
 			}
+			if profileHandler != nil {
+				profileHandler.RegisterRoutes(profile)
+			}
 		}
 	}
 
@@ -122,6 +140,9 @@ func main() {
 			if businessProfileHandler != nil {
 				businessProfileHandler.RegisterRoutes(profile)
 			}
+			if profileHandler != nil {
+				profileHandler.RegisterRoutes(profile)
+			}
 		}
 	}
 
@@ -130,12 +151,17 @@ func main() {
 	fmt.Println(" API Base: http://localhost:8080/api/v1")
 	
 	if redisClient != nil {
+		fmt.Println(" Using Redis backend (real or embedded)")
 		fmt.Println(" OTP Endpoints:")
 		fmt.Println("   POST /api/v1/auth/send-otp")
 		fmt.Println("   POST /api/v1/auth/verify-otp")
 		fmt.Println(" Profile Endpoints:")
 		fmt.Println("   POST /api/v1/profile/business-details")
 		fmt.Println("   POST /api/profile/business-details")
+		fmt.Println("   POST /api/v1/profile/account-type")
+		fmt.Println("   POST /api/v1/profile/personal-details")
+		fmt.Println("   POST /api/v1/profile/address")
+		fmt.Println("   GET  /api/v1/profile/status?user_id=")
 		fmt.Println(" PIN Endpoints:")
 		fmt.Println("   POST /api/v1/auth/setup-pin")
 		fmt.Println("   POST /api/v1/auth/login-pin")
