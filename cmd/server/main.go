@@ -5,9 +5,13 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/codeZe-us/vestroll-backend/internal/config"
+	"github.com/codeZe-us/vestroll-backend/intern			// Apply specific rate limiting for login
+			loginGroup := auth.Group("/")
+			loginGroup.Use(middleware.LoginRateLimitMiddleware())
+			auth.RegisterLoginRoutes(loginGroup, loginHandler)onfig"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
+	"github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
@@ -54,6 +58,13 @@ func main() {
 	userService := services.NewUserService(userRepo, cfg.JWT)
 	userHandler := handlers.NewUserHandler(userService)
 
+	// Initialize PostgreSQL connection
+	db, err := database.NewPostgreSQLConnection(cfg.Database)
+	if err != nil {
+		log.Printf("Warning: PostgreSQL connection failed: %v. Login functionality will not be available.", err)
+	}
+
+
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
 	var businessProfileHandler *handlers.BusinessProfileHandler
@@ -77,6 +88,18 @@ func main() {
 		pinHandler = handlers.NewPINHandler(pinService)
 	}
 
+	// Initialize authentication services (if PostgreSQL is available)
+	var loginHandler *auth.LoginHandler
+	if db != nil {
+		// Initialize user repository and auth services
+		userRepo := repository.NewUserRepository(db)
+		jwtService := services.NewJWTService(cfg.JWT)
+		authService := services.NewAuthService(userRepo, jwtService)
+
+		// Initialize login handler
+		loginHandler = auth.NewLoginHandler(authService)
+	}
+
 	// API routes
 	v1 := r.Group("/api/v1")
 	{
@@ -85,8 +108,18 @@ func main() {
 			// Apply rate limiting to OTP endpoints
 			auth.Use(middleware.OTPRateLimitMiddleware())
 			
+
 			// User authentication endpoints (always available)
 			userHandler.RegisterRoutes(auth)
+
+			// Login endpoints (only if PostgreSQL is available)
+			if loginHandler != nil {
+				// Apply specific rate limiting for login
+				loginGroup := auth.Group("/")
+				loginGroup.Use(middleware.LoginRateLimitMiddleware())
+				auth_routes.RegisterLoginRoutes(loginGroup, loginHandler)
+			}
+
 			
 			// OTP endpoints (only if Redis is available)
 			if otpHandler != nil {
@@ -97,6 +130,13 @@ func main() {
 			if pinHandler != nil {
 				pinHandler.RegisterRoutes(auth)
 			}
+
+
+			// Register endpoint (placeholder for future implementation)
+			auth.POST("/register", func(c *gin.Context) {
+				c.JSON(http.StatusOK, gin.H{"message": "Register endpoint - Coming soon"})
+			})
+
 		}
 
 		employees := v1.Group("/employees")
@@ -139,6 +179,13 @@ func main() {
 	fmt.Println("   POST /api/v1/auth/register")
 	fmt.Println("   POST /api/v1/auth/login")
 	
+	if db != nil {
+		fmt.Println(" Authentication Endpoints:")
+		fmt.Println("   POST /api/v1/auth/login")
+	} else {
+		fmt.Println(" Login endpoint disabled (PostgreSQL not available)")
+	}
+
 	if redisClient != nil {
 		fmt.Println(" OTP Endpoints:")
 		fmt.Println("   POST /api/v1/auth/send-otp")

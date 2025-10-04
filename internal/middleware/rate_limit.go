@@ -100,3 +100,9 @@ func OTPRateLimitMiddleware() gin.HandlerFunc {
 	// Allow 10 requests per minute for OTP endpoints
 	return RateLimitMiddleware(10.0/60.0, 10)
 }
+
+// LoginRateLimitMiddleware creates a rate limiting middleware specifically for login endpoints
+func LoginRateLimitMiddleware() gin.HandlerFunc {
+	// Allow 10 login attempts per 15 minutes
+	return RateLimitMiddleware(10.0/(15.0*60.0), 10)
+}
