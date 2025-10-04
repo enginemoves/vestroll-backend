@@ -3,6 +3,7 @@ module github.com/codeZe-us/vestroll-backend
 go 1.25.1
 
 require (
+	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v8 v8.11.5
 	github.com/twilio/twilio-go v1.22.3
@@ -11,7 +12,6 @@ require (
 )
 
 require (
-	github.com/alicebob/miniredis/v2 v2.35.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
 	github.com/bytedance/sonic/loader v0.1.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
