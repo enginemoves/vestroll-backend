@@ -36,11 +36,23 @@ func main() {
 		})
 	})
 
+	// Initialize PostgreSQL client
+	postgresClient, err := database.NewPostgresClient(cfg.Database)
+	if err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	}
+	defer postgresClient.Close()
+
 	// Initialize Redis client
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {
 		log.Printf("Warning: Redis connection failed: %v. OTP functionality will not be available.", err)
 	}
+
+	// Initialize user services (always available with PostgreSQL)
+	userRepo := repository.NewUserRepository(postgresClient)
+	userService := services.NewUserService(userRepo, cfg.JWT)
+	userHandler := handlers.NewUserHandler(userService)
 
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
@@ -73,6 +85,9 @@ func main() {
 			// Apply rate limiting to OTP endpoints
 			auth.Use(middleware.OTPRateLimitMiddleware())
 			
+			// User authentication endpoints (always available)
+			userHandler.RegisterRoutes(auth)
+			
 			// OTP endpoints (only if Redis is available)
 			if otpHandler != nil {
 				otpHandler.RegisterRoutes(auth)
@@ -82,14 +97,6 @@ func main() {
 			if pinHandler != nil {
 				pinHandler.RegisterRoutes(auth)
 			}
-
-			// Existing auth endpoints
-			auth.POST("/login", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Login endpoint - Coming soon"})
-			})
-			auth.POST("/register", func(c *gin.Context) {
-				c.JSON(http.StatusOK, gin.H{"message": "Register endpoint - Coming soon"})
-			})
 		}
 
 		employees := v1.Group("/employees")
@@ -128,6 +135,9 @@ func main() {
 	fmt.Println(" VestRoll Backend starting on :8080")
 	fmt.Println(" Health check: http://localhost:8080/health")
 	fmt.Println(" API Base: http://localhost:8080/api/v1")
+	fmt.Println(" Auth Endpoints:")
+	fmt.Println("   POST /api/v1/auth/register")
+	fmt.Println("   POST /api/v1/auth/login")
 	
 	if redisClient != nil {
 		fmt.Println(" OTP Endpoints:")
