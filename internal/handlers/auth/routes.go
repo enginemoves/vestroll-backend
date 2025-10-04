@@ -9,3 +9,7 @@ func RegisterPasswordResetRoutes(r *gin.RouterGroup, handler *PasswordResetHandl
 	r.POST("/verify-reset-code", handler.VerifyResetCode)
 	r.POST("/reset-password", handler.ResetPassword)
 }
+
+func RegisterLoginRoutes(r *gin.RouterGroup, handler *LoginHandler) {
+	r.POST("/login", handler.Login)
+}
