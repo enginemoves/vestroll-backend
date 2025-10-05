@@ -40,17 +40,30 @@ func main() {
 		})
 	})
 
+	// Initialize PostgreSQL client
+	postgresClient, err := database.NewPostgresClient(cfg.Database)
+	if err != nil {
+		log.Fatalf("Failed to connect to PostgreSQL: %v", err)
+	}
+	defer postgresClient.Close()
+
 	// Initialize Redis client
 	redisClient, err := database.NewRedisClient(cfg.Redis)
 	if err != nil {
 		log.Printf("Warning: Redis connection failed: %v. OTP functionality will not be available.", err)
 	}
 
+	// Initialize user services (always available with PostgreSQL)
+	userRepo := repository.NewUserRepository(postgresClient)
+	userService := services.NewUserService(userRepo, cfg.JWT)
+	userHandler := handlers.NewUserHandler(userService)
+
 	// Initialize PostgreSQL connection
 	db, err := database.NewPostgreSQLConnection(cfg.Database)
 	if err != nil {
 		log.Printf("Warning: PostgreSQL connection failed: %v. Login functionality will not be available.", err)
 	}
+
 
 	// Initialize services only if Redis is available
 	var otpHandler *handlers.OTPHandler
@@ -95,6 +108,10 @@ func main() {
 			// Apply rate limiting to OTP endpoints
 			auth.Use(middleware.OTPRateLimitMiddleware())
 			
+
+			// User authentication endpoints (always available)
+			userHandler.RegisterRoutes(auth)
+
 			// Login endpoints (only if PostgreSQL is available)
 			if loginHandler != nil {
 				// Apply specific rate limiting for login
@@ -102,6 +119,7 @@ func main() {
 				loginGroup.Use(middleware.LoginRateLimitMiddleware())
 				auth_routes.RegisterLoginRoutes(loginGroup, loginHandler)
 			}
+
 			
 			// OTP endpoints (only if Redis is available)
 			if otpHandler != nil {
@@ -113,10 +131,12 @@ func main() {
 				pinHandler.RegisterRoutes(auth)
 			}
 
+
 			// Register endpoint (placeholder for future implementation)
 			auth.POST("/register", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"message": "Register endpoint - Coming soon"})
 			})
+
 		}
 
 		employees := v1.Group("/employees")
@@ -155,6 +175,9 @@ func main() {
 	fmt.Println(" VestRoll Backend starting on :8080")
 	fmt.Println(" Health check: http://localhost:8080/health")
 	fmt.Println(" API Base: http://localhost:8080/api/v1")
+	fmt.Println(" Auth Endpoints:")
+	fmt.Println("   POST /api/v1/auth/register")
+	fmt.Println("   POST /api/v1/auth/login")
 	
 	if db != nil {
 		fmt.Println(" Authentication Endpoints:")
