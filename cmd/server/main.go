@@ -8,9 +8,12 @@ import (
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
+	authhandlers "github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
+	email_service "github.com/codeZe-us/vestroll-backend/internal/services/email_service"
+	sms_service "github.com/codeZe-us/vestroll-backend/internal/services/sms_service"
 	"github.com/gin-gonic/gin"
 )
 
@@ -46,6 +49,7 @@ func main() {
 	var otpHandler *handlers.OTPHandler
 	var businessProfileHandler *handlers.BusinessProfileHandler
 	var pinHandler *handlers.PINHandler
+	var emailVerificationHandler *authhandlers.EmailVerificationHandler
 	if redisClient != nil {
 		// Initialize repositories
 		otpRepo := repository.NewOTPRepository(redisClient, cfg.OTP.TTL)
@@ -53,16 +57,22 @@ func main() {
 		pinRepo := repository.NewPinRepository(redisClient, 0)
 
 		// Initialize services
-		smsService := services.NewSMSService(cfg.Twilio)
-		emailService := services.NewEmailService(cfg.SMTP)
+		smsService := sms_service.NewSMSService(cfg.Twilio)
+		emailService := email_service.NewEmailService(cfg.SMTP)
 		otpService := services.NewOTPService(otpRepo, smsService, emailService, cfg.OTP)
 		businessService := services.NewBusinessProfileService(businessRepo)
 		pinService := services.NewPINService(pinRepo)
+
+		// Email verification wiring
+		userRepo := repository.NewUserRepository(redisClient)
+		emailVerRepo := repository.NewEmailVerificationRepository(redisClient, cfg.EmailVerification.TTL)
+		emailVerService := services.NewEmailVerificationService(emailVerRepo, userRepo, emailService, cfg.EmailVerification)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
 		businessProfileHandler = handlers.NewBusinessProfileHandler(businessService)
 		pinHandler = handlers.NewPINHandler(pinService)
+		emailVerificationHandler = authhandlers.NewEmailVerificationHandler(emailVerService)
 	}
 
 	// API routes
@@ -81,6 +91,11 @@ func main() {
 			// PIN endpoints (only if Redis is available)
 			if pinHandler != nil {
 				pinHandler.RegisterRoutes(auth)
+			}
+
+			// Email verification endpoint
+			if emailVerificationHandler != nil {
+				auth.POST("/verify-email", emailVerificationHandler.VerifyEmail)
 			}
 
 			// Existing auth endpoints
@@ -139,6 +154,8 @@ func main() {
 		fmt.Println(" PIN Endpoints:")
 		fmt.Println("   POST /api/v1/auth/setup-pin")
 		fmt.Println("   POST /api/v1/auth/login-pin")
+		fmt.Println(" Email Verification:")
+		fmt.Println("   POST /api/v1/auth/verify-email")
 	} else {
 		fmt.Println(" OTP endpoints disabled (Redis not available)")
 		fmt.Println(" Profile endpoints disabled (Redis not available)")
