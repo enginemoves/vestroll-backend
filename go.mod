@@ -6,7 +6,11 @@ require (
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v8 v8.11.5
+	github.com/golang-jwt/jwt/v5 v5.2.1
+	github.com/labstack/echo/v4 v4.13.4
+	github.com/lib/pq v1.10.9
 	github.com/twilio/twilio-go v1.22.3
+	golang.org/x/crypto v0.42.0
 	golang.org/x/time v0.11.0
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
