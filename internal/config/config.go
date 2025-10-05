@@ -15,10 +15,20 @@ type Config struct {
 	Twilio   TwilioConfig
 	SMTP     SMTPConfig
 	Google   GoogleConfig
+	Apple    AppleConfig
 }
 type GoogleConfig struct {
 	ClientID     string
 	ClientSecret string
+	RedirectURL  string
+}
+
+type AppleConfig struct {
+	ClientID     string
+	ClientSecret string
+	TeamID       string
+	KeyID        string
+	PrivateKey   string
 	RedirectURL  string
 }
 
@@ -121,6 +131,14 @@ func Load() *Config {
 			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
 			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
 			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
+		},
+		Apple: AppleConfig{
+			ClientID:     getEnv("APPLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("APPLE_CLIENT_SECRET", ""),
+			TeamID:       getEnv("APPLE_TEAM_ID", ""),
+			KeyID:        getEnv("APPLE_KEY_ID", ""),
+			PrivateKey:   getEnv("APPLE_PRIVATE_KEY", ""),
+			RedirectURL:  getEnv("APPLE_REDIRECT_URL", ""),
 		},
 	}
 }
