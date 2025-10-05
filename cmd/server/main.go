@@ -65,14 +65,12 @@ func main() {
 
 		// Email verification wiring
 		userRepo := repository.NewUserRepository(redisClient)
-		emailVerRepo := repository.NewEmailVerificationRepository(redisClient, cfg.EmailVerification.TTL)
-		emailVerService := services.NewEmailVerificationService(emailVerRepo, userRepo, emailService, cfg.EmailVerification)
 
 		// Initialize handlers
 		otpHandler = handlers.NewOTPHandler(otpService)
 		businessProfileHandler = handlers.NewBusinessProfileHandler(businessService)
 		pinHandler = handlers.NewPINHandler(pinService)
-		emailVerificationHandler = authhandlers.NewEmailVerificationHandler(emailVerService)
+		emailVerificationHandler = authhandlers.NewEmailVerificationHandler(otpService, userRepo)
 	}
 
 	// API routes
@@ -93,10 +91,6 @@ func main() {
 				pinHandler.RegisterRoutes(auth)
 			}
 
-			// Email verification endpoint
-			if emailVerificationHandler != nil {
-				auth.POST("/verify-email", emailVerificationHandler.VerifyEmail)
-			}
 
 			// Existing auth endpoints
 			auth.POST("/login", func(c *gin.Context) {
@@ -129,13 +123,22 @@ func main() {
 		}
 	}
 
-	// Also expose non-versioned /api/profile routes for compatibility
+	// Also expose non-versioned /api routes for compatibility
 	api := r.Group("/api")
 	{
+		// Profile routes
 		profile := api.Group("/profile")
 		{
 			if businessProfileHandler != nil {
 				businessProfileHandler.RegisterRoutes(profile)
+			}
+		}
+
+		// Auth routes
+		auth := api.Group("/auth")
+		{
+			if emailVerificationHandler != nil {
+				auth.POST("/verify-email", emailVerificationHandler.VerifyEmail)
 			}
 		}
 	}
@@ -155,7 +158,7 @@ func main() {
 		fmt.Println("   POST /api/v1/auth/setup-pin")
 		fmt.Println("   POST /api/v1/auth/login-pin")
 		fmt.Println(" Email Verification:")
-		fmt.Println("   POST /api/v1/auth/verify-email")
+		fmt.Println("   POST /api/auth/verify-email")
 	} else {
 		fmt.Println(" OTP endpoints disabled (Redis not available)")
 		fmt.Println(" Profile endpoints disabled (Redis not available)")
