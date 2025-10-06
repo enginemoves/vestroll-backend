@@ -28,7 +28,7 @@ func main() {
 	gin.SetMode(gin.DebugMode)
 
 	r := gin.Default()
-	
+
 	// Add middleware
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
@@ -139,6 +139,21 @@ func main() {
 				pinHandler.RegisterRoutes(auth)
 			}
 
+			// Google OAuth endpoints
+			googleOAuth := authhandlers.NewGoogleOAuth(
+				cfg.Google.ClientID,
+				cfg.Google.ClientSecret,
+				cfg.Google.RedirectURL,
+			)
+			authhandlers.RegisterGoogleAuthRoutes(auth, googleOAuth)
+
+			// Apple OAuth endpoints
+			appleOAuth := authhandlers.NewAppleOAuth(
+				cfg.Apple.ClientID,
+				cfg.Apple.ClientSecret,
+				cfg.Apple.RedirectURL,
+			)
+			authhandlers.RegisterAppleAuthRoutes(auth, appleOAuth)
 
 			// Existing auth endpoints
 			auth.POST("/login", func(c *gin.Context) {
@@ -196,16 +211,6 @@ func main() {
 	fmt.Println(" VestRoll Backend starting on :8080")
 	fmt.Println(" Health check: http://localhost:8080/health")
 	fmt.Println(" API Base: http://localhost:8080/api/v1")
-	fmt.Println(" Auth Endpoints:")
-	fmt.Println("   POST /api/v1/auth/register")
-	fmt.Println("   POST /api/v1/auth/login")
-	
-	if db != nil {
-		fmt.Println(" Authentication Endpoints:")
-		fmt.Println("   POST /api/v1/auth/login")
-	} else {
-		fmt.Println(" Login endpoint disabled (PostgreSQL not available)")
-	}
 
 	if redisClient != nil {
 		fmt.Println(" OTP Endpoints:")

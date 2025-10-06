@@ -7,14 +7,30 @@ import (
 )
 
 type Config struct {
-	Server             ServerConfig
-	Database           DatabaseConfig
-	Redis              RedisConfig
-	JWT                JWTConfig
-	OTP                OTPConfig
-	Twilio             TwilioConfig
-	SMTP               SMTPConfig
-	EmailVerification  EmailVerificationConfig
+	Server   ServerConfig
+	Database DatabaseConfig
+	Redis    RedisConfig
+	JWT      JWTConfig
+	OTP      OTPConfig
+	Twilio   TwilioConfig
+	SMTP     SMTPConfig
+	Google   GoogleConfig
+	Apple    AppleConfig
+  EmailVerification  EmailVerificationConfig
+}
+type GoogleConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+}
+
+type AppleConfig struct {
+	ClientID     string
+	ClientSecret string
+	TeamID       string
+	KeyID        string
+	PrivateKey   string
+	RedirectURL  string
 }
 
 type ServerConfig struct {
@@ -43,8 +59,8 @@ type JWTConfig struct {
 }
 
 type OTPConfig struct {
-	Length int
-	TTL    time.Duration
+	Length    int
+	TTL       time.Duration
 	RateLimit RateLimitConfig
 }
 
@@ -117,6 +133,18 @@ func Load() *Config {
 			FromEmail: getEnv("SMTP_FROM_EMAIL", "noreply@vestroll.com"),
 			FromName:  getEnv("SMTP_FROM_NAME", "VestRoll"),
 		},
+		Google: GoogleConfig{
+			ClientID:     getEnv("GOOGLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("GOOGLE_CLIENT_SECRET", ""),
+			RedirectURL:  getEnv("GOOGLE_REDIRECT_URL", ""),
+		},
+		Apple: AppleConfig{
+			ClientID:     getEnv("APPLE_CLIENT_ID", ""),
+			ClientSecret: getEnv("APPLE_CLIENT_SECRET", ""),
+			TeamID:       getEnv("APPLE_TEAM_ID", ""),
+			KeyID:        getEnv("APPLE_KEY_ID", ""),
+			PrivateKey:   getEnv("APPLE_PRIVATE_KEY", ""),
+			RedirectURL:  getEnv("APPLE_REDIRECT_URL", ""),
 		EmailVerification: EmailVerificationConfig{
 			TTL:         time.Duration(getEnvAsInt("EMAIL_VERIFICATION_TTL_MINUTES", 60*24)) * time.Minute,
 			LinkBaseURL: getEnv("EMAIL_VERIFICATION_LINK_BASE_URL", ""),
