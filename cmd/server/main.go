@@ -94,6 +94,14 @@ func main() {
 			)
 			handlers_auth.RegisterGoogleAuthRoutes(auth, googleOAuth)
 
+			// Apple OAuth endpoints
+			appleOAuth := handlers_auth.NewAppleOAuth(
+				cfg.Apple.ClientID,
+				cfg.Apple.ClientSecret,
+				cfg.Apple.RedirectURL,
+			)
+			handlers_auth.RegisterAppleAuthRoutes(auth, appleOAuth)
+
 			// Existing auth endpoints
 			auth.POST("/login", func(c *gin.Context) {
 				c.JSON(http.StatusOK, gin.H{"message": "Login endpoint - Coming soon"})

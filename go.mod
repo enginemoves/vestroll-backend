@@ -10,6 +10,10 @@ require (
 	gopkg.in/gomail.v2 v2.0.0-20160411212932-81ebce5c23df
 )
 
+require github.com/golang-jwt/jwt/v5 v5.3.0
+
+require github.com/Timothylock/go-signin-with-apple v0.2.7 // indirect
+
 require (
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	github.com/bytedance/sonic v1.11.6 // indirect
@@ -41,7 +45,7 @@ require (
 	golang.org/x/arch v0.8.0 // indirect
 	golang.org/x/crypto v0.42.0 // indirect
 	golang.org/x/net v0.43.0 // indirect
-	golang.org/x/oauth2 v0.31.0 
+	golang.org/x/oauth2 v0.31.0
 	golang.org/x/sys v0.36.0 // indirect
 	golang.org/x/text v0.29.0 // indirect
 	google.golang.org/protobuf v1.34.1 // indirect
