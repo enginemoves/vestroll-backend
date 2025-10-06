@@ -8,7 +8,7 @@ import (
 	"github.com/codeZe-us/vestroll-backend/internal/config"
 	"github.com/codeZe-us/vestroll-backend/internal/database"
 	"github.com/codeZe-us/vestroll-backend/internal/handlers"
-	handlers_auth "github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
+	authhandlers "github.com/codeZe-us/vestroll-backend/internal/handlers/auth"
 	"github.com/codeZe-us/vestroll-backend/internal/middleware"
 	"github.com/codeZe-us/vestroll-backend/internal/repository"
 	"github.com/codeZe-us/vestroll-backend/internal/services"
@@ -87,20 +87,20 @@ func main() {
 			}
 
 			// Google OAuth endpoints
-			googleOAuth := handlers_auth.NewGoogleOAuth(
+			googleOAuth := authhandlers.NewGoogleOAuth(
 				cfg.Google.ClientID,
 				cfg.Google.ClientSecret,
 				cfg.Google.RedirectURL,
 			)
-			handlers_auth.RegisterGoogleAuthRoutes(auth, googleOAuth)
+			authhandlers.RegisterGoogleAuthRoutes(auth, googleOAuth)
 
 			// Apple OAuth endpoints
-			appleOAuth := handlers_auth.NewAppleOAuth(
+			appleOAuth := authhandlers.NewAppleOAuth(
 				cfg.Apple.ClientID,
 				cfg.Apple.ClientSecret,
 				cfg.Apple.RedirectURL,
 			)
-			handlers_auth.RegisterAppleAuthRoutes(auth, appleOAuth)
+			authhandlers.RegisterAppleAuthRoutes(auth, appleOAuth)
 
 			// Existing auth endpoints
 			auth.POST("/login", func(c *gin.Context) {
