@@ -16,6 +16,7 @@ type Config struct {
 	SMTP     SMTPConfig
 	Google   GoogleConfig
 	Apple    AppleConfig
+  EmailVerification  EmailVerificationConfig
 }
 type GoogleConfig struct {
 	ClientID     string
@@ -83,6 +84,11 @@ type SMTPConfig struct {
 	FromName  string
 }
 
+type EmailVerificationConfig struct {
+	TTL         time.Duration
+	LinkBaseURL string
+}
+
 func Load() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -139,6 +145,9 @@ func Load() *Config {
 			KeyID:        getEnv("APPLE_KEY_ID", ""),
 			PrivateKey:   getEnv("APPLE_PRIVATE_KEY", ""),
 			RedirectURL:  getEnv("APPLE_REDIRECT_URL", ""),
+		EmailVerification: EmailVerificationConfig{
+			TTL:         time.Duration(getEnvAsInt("EMAIL_VERIFICATION_TTL_MINUTES", 60*24)) * time.Minute,
+			LinkBaseURL: getEnv("EMAIL_VERIFICATION_LINK_BASE_URL", ""),
 		},
 	}
 }

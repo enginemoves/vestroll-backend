@@ -20,4 +20,6 @@ func RegisterAppleAuthRoutes(r *gin.RouterGroup, handler *AppleOAuth) {
 	a := r.Group("/apple")
 	a.POST("/login", handler.AppleHandleLogin)
 	a.POST("/callback", handler.AppleHandleCallback)
+func RegisterLoginRoutes(r *gin.RouterGroup, handler *LoginHandler) {
+	r.POST("/login", handler.Login)
 }
